@@ -2,35 +2,20 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router'
 import { formatTime } from '@/common/utils'
+import { Peer, PeerType } from '@/common/peer'
+import { Store } from '@/store';
 
 const route = useRoute()
 
-const username = route.params.username;
+const username = route.params.username as string;
+const peerType = route.params.peerType as PeerType;
 
 const currentMessage = ref('');
 
 const messageContent = ref<HTMLDivElement>();
 
-const remoteMessageList = ref<{message: string, time: number}[]>([
-    {
-        message: "Hello",
-        time: 1677747006959
-    },
-    {
-        message: "CCCC",
-        time: 1677747037209
-    },
-])
-const localMessageList = ref<{message: string, time: number}[]>([
-    {
-        message: "Good",
-        time: 1677747008959
-    },
-    {
-        message: "CCCC",
-        time: 1677747037209
-    },
-])
+const remoteMessageList = ref<{message: string, time: number}[]>([])
+const localMessageList = ref<{message: string, time: number}[]>([])
 
 const messageList = computed(() => {
     const meMessage = localMessageList.value.map(e => {
@@ -68,9 +53,24 @@ function sendMessage() {
         message,
         time: Date.now(),
     })
+    Store.pc.send(message)
     currentMessage.value = ''
 }
 
+async function beginConnect() {
+    if(peerType === PeerType.OFFER) {
+        Store.pc.connect(peerType, username)
+    }
+}
+
+Store.pc.addReceiveHandler((message) => {
+    remoteMessageList.value.push({
+        message,
+        time: Date.now(),
+    })
+})
+
+beginConnect();
 
 </script>
 
@@ -81,27 +81,31 @@ function sendMessage() {
                 <span>{{ username }}</span>
             </div>
             <div class="message-content" ref="messageContent">
-                <template v-for="(item, index) in messageList" :key="index">
-                    <div v-if="!item.isMe" class="pop">
+                <div v-for="(item, index) in messageList" :key="index" >
+                    <div v-if="!item.isMe" class="pop" >
                         <span class="name"> {{ username[0] }} </span>
                         <div class="info">
                             <span class="time"> {{ formatTime(item.time, 'yyyy-MM-dd HH:mm:ss') }}</span>
                             <span class="context"> {{ item.message }} </span>
                         </div>
                     </div>
-                    <div class="pop myself" else>
+                    <div class="pop myself" v-if="item.isMe">
                         <div class="info">
                             <span class="time"> {{ formatTime(item.time, 'yyyy-MM-dd HH:mm:ss') }}</span>
                             <span class="context"> {{ item.message }} </span>
                         </div>
                         <span class="name"> 我 </span>
                     </div>
-                </template>
+                </div>
             </div>
             <input v-model="currentMessage" @keydown.enter="sendMessage" placeholder="请输入要发送的信息，键入回车发送" class="message-input"/>
         </div>
         <div class="debug-context">
             调试内容
+            <p v-for="(log, index) in Store.pc.log.value" :key="index">
+                <span>{{ log.message }}</span>
+                <span>{{ formatTime(log.time, 'yyyy-MM-dd HH:mm:ss') }}</span>
+            </p>
         </div>
     </div>
 </template>

@@ -20,7 +20,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import(/* webpackChunkName: "private" */ '../views/PrivateView.vue')
   },
   {
-    path: '/message/:username',
+    path: '/message/:username/:peerType',
     name: Pages.MESSAGE,
     component: () => import(/* webpackChunkName: "message" */ '../views/MessageView.vue')
   },

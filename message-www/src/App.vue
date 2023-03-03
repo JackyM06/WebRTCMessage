@@ -5,6 +5,6 @@
 <style lang="less">
 body {
     color: #fff;
-    background-color: #1b2e50;
+    background-color: #292a2b;
 }
 </style>
